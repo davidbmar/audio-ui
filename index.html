@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Recorder App</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app">
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <div class="status-bar__left">
+                <div class="network-status" id="network-status">
+                    <span class="network-icon">🌐</span>
+                    <span class="network-text">Online</span>
+                </div>
+            </div>
+            <div class="status-bar__right">
+                <div class="storage-indicator">
+                    <span class="storage-text" id="storage-text">0 MB / 100 MB</span>
+                    <div class="storage-bar">
+                        <div class="storage-bar__fill" id="storage-fill" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="warning-icon" id="warning-icon" style="display: none;">⚠️</div>
+            </div>
+        </div>
+
+        <div class="container">
+            <!-- Recording Controls -->
+            <div class="recording-controls">
+                <button class="record-button" id="record-button" title="Start Recording">
+                    <span class="record-icon">⏺️</span>
+                </button>
+                
+                <div class="timer" id="timer">00:00 / 01:00</div>
+                
+                <div class="duration-slider">
+                    <input type="range" id="duration-range" class="slider" min="5" max="30" value="5" step="5">
+                    <div class="slider-labels">
+                        <span>5s</span>
+                        <span id="duration-display">5s</span>
+                        <span>30s</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- File List -->
+            <div class="file-list">
+                <div class="file-list__header">
+                    <h2 class="file-list__title">📁 Recordings</h2>
+                    <span class="file-list__count" id="file-count">(0 files)</span>
+                </div>
+                
+                <div class="file-list__content" id="file-list-content">
+                    <div class="empty-state" id="empty-state">
+                        <div class="empty-state__icon">🎙️</div>
+                        <div class="empty-state__text">No recordings yet</div>
+                        <div class="empty-state__subtext">Tap the record button to start</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Panel -->
+            <div class="settings-panel" id="settings-panel" style="display: none;">
+                <div class="settings-panel__header">
+                    <span class="settings-icon">⚙️</span>
+                    <h3 class="settings-panel__title">Settings</h3>
+                    <button class="close-button" id="close-settings">✕</button>
+                </div>
+                
+                <div class="settings-section">
+                    <h4 class="settings-section__title">S3 Configuration</h4>
+                    <div class="form-group">
+                        <label class="form-label" for="s3-bucket">S3 Bucket Name</label>
+                        <input type="text" id="s3-bucket" class="form-input" value="app-recordings-prod">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="s3-path">Path Pattern</label>
+                        <input type="text" id="s3-path" class="form-input" value="audio-recordings/{user_id}/{filename}">
+                    </div>
+                </div>
+                
+                <div class="settings-section">
+                    <h4 class="settings-section__title">Sync Settings</h4>
+                    <div class="form-group">
+                        <label class="form-checkbox">
+                            <input type="checkbox" id="auto-sync" class="checkbox-input" checked>
+                            <span class="checkbox-label">Auto-sync when online</span>
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-checkbox">
+                            <input type="checkbox" id="mobile-sync" class="checkbox-input">
+                            <span class="checkbox-label">Sync over mobile data</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="settings-section">
+                    <h4 class="settings-section__title">Recording</h4>
+                    <div class="form-group">
+                        <label class="form-label" for="overlap-duration">Chunk Overlap Duration (ms)</label>
+                        <select id="overlap-duration" class="form-input">
+                            <option value="250">250ms</option>
+                            <option value="500" selected>500ms</option>
+                            <option value="750">750ms</option>
+                            <option value="1000">1000ms</option>
+                            <option value="1500">1500ms</option>
+                        </select>
+                        <small style="color: var(--gray-500); font-size: var(--text-xs); margin-top: var(--space-1); display: block;">
+                            Overlap prevents audio loss between chunks. Higher values provide better protection but use more processing.
+                        </small>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-checkbox">
+                            <input type="checkbox" id="skip-delete-confirm" class="checkbox-input">
+                            <span class="checkbox-label">Skip delete confirmation</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="settings-section">
+                    <h4 class="settings-section__title">Storage</h4>
+                    <div class="form-group">
+                        <label class="form-label" for="max-storage">Max Local Storage (MB)</label>
+                        <input type="number" id="max-storage" class="form-input" value="100" min="50" max="500">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Button (Mobile) -->
+        <div class="mobile-settings">
+            <button class="settings-button" id="settings-button">
+                <span>⚙️</span>
+                <span>Settings</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal for Rename -->
+    <div class="modal" id="rename-modal" style="display: none;">
+        <div class="modal__backdrop"></div>
+        <div class="modal__content">
+            <h3 class="modal__title">Rename Recording</h3>
+            <input type="text" id="rename-input" class="form-input" placeholder="Enter new name">
+            <div class="modal__actions">
+                <button class="button button--secondary" id="cancel-rename">Cancel</button>
+                <button class="button button--primary" id="confirm-rename">Rename</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Tags -->
+    <div class="modal" id="tags-modal" style="display: none;">
+        <div class="modal__backdrop"></div>
+        <div class="modal__content">
+            <h3 class="modal__title">Edit Tags</h3>
+            <input type="text" id="tags-input" class="form-input" placeholder="Enter tags separated by spaces (e.g., #meeting #work)">
+            <div class="modal__actions">
+                <button class="button button--secondary" id="cancel-tags">Cancel</button>
+                <button class="button button--primary" id="confirm-tags">Save Tags</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="logger.js"></script>
+    <script src="storage.js"></script>
+    <script src="recorder-simple.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
