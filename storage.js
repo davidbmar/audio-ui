@@ -318,7 +318,7 @@ class StorageManager {
             maxLocalStorage: 100 * 1024 * 1024, // 100MB
             defaultChunkDuration: 60, // 1 minute
             overlapDuration: 500, // 500ms overlap between chunks
-            skipDeleteConfirm: false, // Whether to skip delete confirmation
+            skipDeleteConfirm: true, // Whether to skip delete confirmation
             syncOnMobileData: false,
             autoSync: true,
             audioFormat: 'audio/webm',

@@ -28,12 +28,16 @@ class Logger {
             console.log(consoleMsg);
         }
 
+        // DEBUG: Log to console that we're trying to send to server
+        console.log(`🌐 LOGGER: Sending to server - available: ${this.serverAvailable}`);
+
         // Try to send to server
         if (this.serverAvailable) {
             this.sendToServer(component, message, data);
         } else {
             // Buffer logs if server is down
             this.logBuffer.push({ component, message, data, timestamp: Date.now() });
+            console.log(`📋 LOGGER: Buffered log (server unavailable)`, { component, message });
         }
     }
 

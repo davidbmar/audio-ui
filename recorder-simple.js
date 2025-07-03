@@ -269,29 +269,46 @@ class SimpleAudioRecorder {
             }
         }
 
-        // Reset for next chunk if still recording - FAST RESTART
+        // Reset for next chunk if still recording - ULTRA-FAST RESTART
         if (this.isRecording) {
-            console.log('🔄 RESTART: Fast restart for next chunk...');
+            console.log('🔄 RESTART: Ultra-fast restart for next chunk...');
             
-            // Stop current recorder
+            // Pre-create new recorder BEFORE stopping old one for minimal gap
+            const newRecorder = new MediaRecorder(this.audioStream, {
+                mimeType: this.mimeType,
+                audioBitsPerSecond: 128000
+            });
+            
+            // Set up handlers for new recorder
+            newRecorder.ondataavailable = (event) => {
+                if (event.data && event.data.size > 0) {
+                    this.audioChunks.push(event.data);
+                }
+            };
+            newRecorder.onstop = () => this.handleStop();
+            newRecorder.onerror = (event) => {
+                console.error('❌ ERROR: MediaRecorder error:', event.error);
+                this.isRecording = false;
+                this.stopTimers();
+            };
+            
+            // Stop old recorder
             if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
-                // Remove handlers to prevent interference
                 this.mediaRecorder.ondataavailable = null;
                 this.mediaRecorder.onstop = null;
                 this.mediaRecorder.onerror = null;
-                
-                // Stop recording
                 this.mediaRecorder.stop();
             }
             
-            // Create fresh recorder immediately
-            await this.createFreshMediaRecorder();
+            // Start new recorder IMMEDIATELY (no delay)
+            this.mediaRecorder = newRecorder;
+            this.mediaRecorder.start(500);
             
             // Reset chunk tracking
             this.audioChunks = [];
             this.lastChunkTime = Date.now();
             
-            console.log('🔄 RESTART: Ready for next chunk');
+            console.log('🔄 RESTART: Ultra-fast restart complete');
         }
     }
 
@@ -497,9 +514,9 @@ class SimpleAudioRecorder {
     }
 
     async createFreshMediaRecorder() {
-        console.log('🔄 FRESH: Creating fresh MediaRecorder instance');
+        console.log('🔄 FRESH: Creating fresh MediaRecorder instance with minimal delay');
         
-        // Clean up old MediaRecorder
+        // Clean up old MediaRecorder with MINIMAL delay
         if (this.mediaRecorder) {
             console.log('🔄 FRESH: Cleaning up old MediaRecorder, state:', this.mediaRecorder.state);
             try {
@@ -517,8 +534,8 @@ class SimpleAudioRecorder {
             }
         }
         
-        // Wait a moment for cleanup
-        await new Promise(resolve => setTimeout(resolve, 50));
+        // MINIMAL wait - reduce from 50ms to 10ms
+        await new Promise(resolve => setTimeout(resolve, 10));
         
         console.log('🔄 FRESH: Creating new MediaRecorder instance');
         this.mediaRecorder = new MediaRecorder(this.audioStream, {
@@ -545,9 +562,9 @@ class SimpleAudioRecorder {
             this.stopTimers();
         };
 
-        // Start the fresh recorder
-        console.log('▶️ FRESH: Starting fresh MediaRecorder');
-        this.mediaRecorder.start(1000);
+        // Start the fresh recorder IMMEDIATELY
+        console.log('▶️ FRESH: Starting fresh MediaRecorder immediately');
+        this.mediaRecorder.start(500); // Smaller timeslice for more responsive data
         console.log('✅ FRESH: Fresh MediaRecorder started, state:', this.mediaRecorder.state);
     }
 

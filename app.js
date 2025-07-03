@@ -57,19 +57,19 @@ class AudioRecorderApp {
         try {
             console.log('Initializing Audio Recorder App...');
             
-            // Check browser support
-            if (!SimpleAudioRecorder.isSupported()) {
-                this.showError('Your browser does not support audio recording. Please use a modern browser with HTTPS.');
-                return;
-            }
-
             // Initialize storage
             this.storage = new StorageManager();
             await this.storage.init();
             console.log('Storage initialized');
 
-            // Initialize audio recorder
-            this.recorder = new SimpleAudioRecorder();
+            // Initialize audio recorder - use simple recorder for stability
+            if (SimpleAudioRecorder.isSupported()) {
+                console.log('🎙️ APP: Using SimpleAudioRecorder');
+                this.recorder = new SimpleAudioRecorder();
+            } else {
+                this.showError('Your browser does not support audio recording. Please use a modern browser with HTTPS.');
+                return;
+            }
             this.setupRecorderCallbacks();
 
             // Load settings and recordings
@@ -337,7 +337,7 @@ class AudioRecorderApp {
             this.elements.overlapDuration.value = this.settings.overlapDuration || 500;
         }
         if (this.elements.skipDeleteConfirm) {
-            this.elements.skipDeleteConfirm.checked = this.settings.skipDeleteConfirm || false;
+            this.elements.skipDeleteConfirm.checked = this.settings.skipDeleteConfirm || true;
         }
         
         // Apply to recorder
